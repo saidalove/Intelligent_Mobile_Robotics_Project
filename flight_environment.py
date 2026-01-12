@@ -6,14 +6,16 @@ from math import sin,cos,tan
 from mpl_toolkits.mplot3d import Axes3D
 
 class FlightEnvironment:
-    def __init__(self,obs_num):
+    def __init__(self, obs_num, reserved_points=None):
         self.env_width = 20.0
         self.env_length = 20.0
         self.env_height = 5
         self.space_size = (self.env_width,self.env_length,self.env_height)
         self._obs_num = obs_num
 
-        self.cylinders = self.generate_random_cylinders(self.space_size,self._obs_num,0.1,0.3,5,5)
+        self.cylinders = self.generate_random_cylinders(
+            self.space_size, self._obs_num, 0.1, 0.3, 5, 5, reserved_points=reserved_points
+        )
 
 
 
@@ -21,7 +23,10 @@ class FlightEnvironment:
     def generate_random_cylinders(self,space_size, N,
                               min_radius, max_radius,
                               min_height, max_height,
-                              max_tries=100000):
+                              max_tries=100000,reserved_points=None):
+        
+        if reserved_points is None:
+            reserved_points = []
 
         X, Y, Z = space_size
         cylinders = []
@@ -44,6 +49,15 @@ class FlightEnvironment:
                 dy = y - c[1]
                 dist = np.hypot(dx, dy)
                 if dist < (r + c[3]):  
+                    no_overlapping = False
+                    break
+
+            # check reserved points
+            for p in reserved_points:
+                dx = x - p[0]
+                dy = y - p[1]
+                dist = np.hypot(dx, dy)
+                if dist < (r + 0.5): 
                     no_overlapping = False
                     break
 
@@ -150,7 +164,7 @@ class FlightEnvironment:
             ax.scatter(xs[0], ys[0], zs[0], s=40) 
             ax.scatter(xs[-1], ys[-1], zs[-1], s=40) 
         self.set_axes_equal(ax)
-        plt.show()
+        return fig
 
 
     def set_axes_equal(self,ax):

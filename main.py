@@ -1,8 +1,26 @@
-from flight_environment import FlightEnvironment
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import rcParams
 
-env = FlightEnvironment(50)
-start = (1,2,0)
-goal = (18,18,3)
+from flight_environment import FlightEnvironment
+from path_planner import RRTStarPlanner
+from trajectory_generator import QuinticTrajectoryGenerator
+
+# ================== 全局字体设置 ==================
+rcParams['font.family'] = 'Times New Roman'
+rcParams['font.size'] = 10
+
+# ================== 起点/终点 ==================
+start = (1, 2, 0)
+goal = (18, 18, 3)
+
+# ================== 创建环境 ==================
+env = FlightEnvironment(50, reserved_points=[start, goal])
+
+# ================== 保存路径的文件夹 ==================
+save_dir = "img/result"
+os.makedirs(save_dir, exist_ok=True)
 
 # --------------------------------------------------------------------------------------------------- #
 # Call your path planning algorithm here. 
@@ -13,13 +31,25 @@ goal = (18,18,3)
 #   - column 3 contains the z-coordinates of all path points
 # This `path` array will be provided to the `env` object for visualization.
 
-path = [[0,0,0],[1,1,1],[2,2,2],[3,3,3]]
+planner = RRTStarPlanner(env, step_size=0.5, goal_sample_rate=0.1, use_shortcut=True)
+
+path, raw_path, runtime, nodes_before, nodes_after, len_before, len_after = planner.plan(start, goal)
 
 # --------------------------------------------------------------------------------------------------- #
 
+fig = env.plot_cylinders(path)
 
-env.plot_cylinders(path)
+# 添加图题在下方居中
+fig_text = f"RRT* Path (Shortcut) with 50 Obstacles\nLength: {len_after:.2f} m, Nodes: {nodes_after}"
+fig.text(0.5, 0.01, fig_text, ha='center', fontname='Times New Roman', fontsize=10)
 
+# 保存图像
+plt.show()
+fig_path = os.path.join(save_dir, "RRTStar_path_shortcut.png")
+fig.savefig(fig_path, dpi=300, bbox_inches="tight")
+plt.close(fig)
+
+print(f"Saved path figure: {fig_path}")
 
 # --------------------------------------------------------------------------------------------------- #
 #   Call your trajectory planning algorithm here. The algorithm should
@@ -34,8 +64,23 @@ env.plot_cylinders(path)
 #   points on the same figure to clearly show how the continuous trajectory
 #   follows these path points.
 
+traj_gen = QuinticTrajectoryGenerator(path)
+t, x, y, z = traj_gen.generate_trajectory()
 
+# 绘制轨迹
+fig = traj_gen.plot_trajectory()
 
+# 添加图题在下方居中
+fig_text = f"RRT* Trajectory (Shortcut) with 50 Obstacles"
+fig.text(0.5, 0.01, fig_text, ha='center', fontname='Times New Roman', fontsize=12)
+
+# 保存图像
+plt.show()
+fig_path = os.path.join(save_dir, "RRTStar_trajectory_shortcut.png")
+fig.savefig(fig_path, dpi=300, bbox_inches="tight")
+plt.close(fig)
+
+print(f"Saved path figure: {fig_path}")
 
 # --------------------------------------------------------------------------------------------------- #
 
